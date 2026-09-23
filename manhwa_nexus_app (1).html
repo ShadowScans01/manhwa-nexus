@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manhwa Nexus - Leer Manhwas Online en Español</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0f1117; color: #f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        .manhwa-reader img { display: block; width: 100%; max-width: 800px; margin: 0 auto; height: auto; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- HEADER / NAVEGACIÓN -->
+    <header class="bg-[#161922] border-b border-gray-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" onclick="showHome()" class="flex items-center space-x-2 text-xl font-bold text-indigo-400">
+                <i class="fa-solid fa-book-open-reader"></i>
+                <span>Manhwa Nexus</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <button onclick="showHome()" class="text-gray-300 hover:text-white transition"><i class="fa-solid fa-house"><span> Inicio</span></i></button>
+                <button onclick="openAdminModal()" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg text-sm font-medium transition text-white">
+                    <i class="fa-solid fa-lock"></i> Panel Admin
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full">
+        
+        <!-- VISTA DE INICIO (Catálogo) -->
+        <div id="home-view">
+            <div class="mb-8 bg-gradient-to-r from-indigo-900/40 to-purple-900/40 p-6 rounded-2xl border border-indigo-800/50">
+                <h1 class="text-3xl font-extrabold mb-2">Bienvenido a Manhwa Nexus</h1>
+                <p class="text-gray-400">Explora, lee y descubre los mejores manhwas en alta calidad y con lectura vertical continua.</p>
+            </div>
+
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold border-l-4 border-indigo-500 pl-3">Catálogo de Manhwas</h2>
+                <div class="text-sm text-gray-400" id="manhwa-count">Cargando...</div>
+            </div>
+
+            <!-- Lista de Manhwas (Grid) -->
+            <div id="manhwa-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+
+        <!-- VISTA DE DETALLE DE MANHWA Y CAPÍTULOS -->
+        <div id="detail-view" class="hidden">
+            <button onclick="showHome()" class="mb-6 text-indigo-400 hover:underline flex items-center space-x-2">
+                <i class="fa-solid fa-arrow-left"></i> <span>Volver al catálogo</span>
+            </button>
+            <div id="manhwa-detail-content" class="bg-[#161922] border border-gray-800 rounded-2xl p-6">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+
+        <!-- VISTA DE LECTURA DE CAPÍTULO -->
+        <div id="reader-view" class="hidden">
+            <div class="flex justify-between items-center mb-4 bg-[#161922] p-4 rounded-xl border border-gray-800 sticky top-16 z-40">
+                <button onclick="backToDetail()" class="text-gray-300 hover:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Regresar</span>
+                </button>
+                <h3 id="reader-title" class="font-semibold text-lg text-center truncate px-2">Capítulo</h3>
+                <div></div>
+            </div>
+            <!-- Lector Vertical Continuo (Sin espacios) -->
+            <div id="reader-images" class="manhwa-reader bg-black rounded-lg overflow-hidden shadow-2xl">
+                <!-- Imágenes del capítulo -->
+            </div>
+        </div>
+
+        <!-- PANEL DE ADMINISTRACIÓN -->
+        <div id="admin-view" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-gauge"></i> Panel de Administración</h2>
+                <button onclick="showHome()" class="text-gray-400 hover:text-white">Cerrar Panel</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Formulario para agregar Manhwa -->
+                <div class="bg-[#161922] border border-gray-800 p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4 text-white">Agregar Nuevo Manhwa</h3>
+                    <form id="add-manhwa-form" onsubmit="handleCreateManhwa(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Título del Manhwa</label>
+                            <input type="text" id="m-title" required class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Género</label>
+                            <input type="text" id="m-genero" placeholder="Ej: Acción, Fantasía" class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">URL de la Portada (Imagen)</label>
+                            <input type="url" id="m-cover" required placeholder="https://..." class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition">Guardar Manhwa</button>
+                    </form>
+                </div>
+
+                <!-- Formulario para agregar Capítulo -->
+                <div class="bg-[#161922] border border-gray-800 p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4 text-white">Agregar Capítulo a un Manhwa</h3>
+                    <form id="add-chapter-form" onsubmit="handleCreateChapter(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Seleccionar Manhwa</label>
+                            <select id="c-manhwa-id" required class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white">
+                                <!-- Opciones con JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Número o Nombre del Capítulo</label>
+                            <input type="text" id="c-number" required placeholder="Ej: Capítulo 1" class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">URLs de las Páginas (Una por línea)</label>
+                            <textarea id="c-pages" rows="4" required placeholder="https://imagen1.jpg&#10;https://imagen2.jpg" class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2.5 text-white font-mono text-xs"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition">Publicar Capítulo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE LOGIN ADMIN -->
+    <div id="login-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-[#161922] border border-gray-800 p-6 rounded-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold mb-4 text-white">Acceso Administrador</h3>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Correo electrónico</label>
+                    <input type="email" id="admin-email" required value="admin@admin.com" class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Contraseña</label>
+                    <input type="password" id="admin-pass" required value="admin123" class="w-full bg-[#0f1117] border border-gray-700 rounded-lg p-2 text-white">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-gray-400 hover:text-white text-sm">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm text-white font-medium">Ingresar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#161922] border-t border-gray-800 text-center py-4 text-sm text-gray-500 mt-12">
+        &copy; 2026 Manhwa Nexus. Todos los derechos reservados.
+    </footer>
+
+    <!-- SCRIPT DE CONEXIÓN Y LÓGICA -->
+    <script>
+        // Credenciales correctas de Supabase configuradas
+        const SUPABASE_URL = 'https://llcnufcpooupwlnnusrx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsY251ZmNwb291cHdsbm51c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDgwNDMsImV4cCI6MjEwNTU4NDA0M30.RCJriRFvzU6J4fzPHE_epVAbqPlyA0T5vfoVFIIPtQo';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentManhwaId = null;
+
+        // Inicializar aplicación
+        window.addEventListener('DOMContentLoaded', () => {
+            loadManhwas();
+        });
+
+        // Cambiar vistas
+        function showHome() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('reader-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            loadManhwas();
+        }
+
+        function showDetail(id) {
+            currentManhwaId = id;
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            document.getElementById('reader-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            loadManhwaDetail(id);
+        }
+
+        function backToDetail() {
+            if (currentManhwaId) showDetail(currentManhwaId);
+            else showHome();
+        }
+
+        // Cargar lista de Manhwas
+        async function loadManhwas() {
+            const grid = document.getElementById('manhwa-grid');
+            grid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">Cargando catálogo...</p>';
+
+            const { data, error } = await supabaseClient.from('manhwas').select('*');
+
+            if (error || !data || data.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-[#161922] border border-gray-800 rounded-xl p-6">
+                        <i class="fa-solid fa-book-open text-3xl text-indigo-400 mb-2"></i>
+                        <p class="text-gray-300 font-medium">Aún no hay manhwas creados en la base de datos.</p>
+                        <p class="text-sm text-gray-500 mt-1">Entra al Panel Admin (Arriba a la derecha) con admin@admin.com / admin123 para agregar el primero.</p>
+                    </div>`;
+                document.getElementById('manhwa-count').innerText = '0 Obras';
+                return;
+            }
+
+            document.getElementById('manhwa-count').innerText = `${data.length} Obras`;
+            grid.innerHTML = data.map(m => `
+                <div onclick="showDetail('${m.id}')" class="bg-[#161922] border border-gray-800 rounded-xl overflow-hidden cursor-pointer hover:border-indigo-500 transition group">
+                    <div class="aspect-[3/4] overflow-hidden bg-gray-900">
+                        <img src="${m.portada_url || 'https://via.placeholder.com/300x400'}" alt="${m.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-semibold text-white truncate">${m.titulo}</h3>
+                        <p class="text-xs text-indigo-400 mt-1">${m.genero || 'Manhwa'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Cargar detalles de un Manhwa y sus capítulos
+        async function loadManhwaDetail(id) {
+            const container = document.getElementById('manhwa-detail-content');
+            container.innerHTML = '<p class="text-gray-400 text-center py-8">Cargando información...</p>';
+
+            const { data: manhwa, error } = await supabaseClient.from('manhwas').select('*').eq('id', id).single();
+            const { data: chapters } = await supabaseClient.from('capitulos').select('*').eq('manhwa_id', id).order('creado_en', { ascending: true });
+
+            if (error || !manhwa) {
+                container.innerHTML = '<p class="text-red-400 text-center">Error al cargar el manhwa.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6">
+                    <img src="${manhwa.portada_url}" class="w-48 h-64 object-cover rounded-xl border border-gray-700 shadow-md mx-auto md:mx-0">
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">${manhwa.titulo}</h1>
+                        <p class="text-indigo-400 text-sm font-semibold mb-4">Género: ${manhwa.genero || 'No especificado'}</p>
+                    </div>
+                </div>
+                <hr class="border-gray-800 my-6">
+                <h3 class="text-xl font-bold mb-4 text-white"><i class="fa-solid fa-list"></i> Capítulos</h3>
+                <div class="space-y-2">
+                    ${chapters && chapters.length > 0 ? chapters.map(ch => `
+                        <div onclick="openReader('${ch.id}', '${ch.numero_capitulo}')" class="bg-[#0f1117] border border-gray-800 hover:border-indigo-500 p-3 rounded-lg flex justify-between items-center cursor-pointer transition">
+                            <span class="font-medium text-gray-200">${ch.numero_capitulo}</span>
+                            <span class="text-xs text-indigo-400">Leer <i class="fa-solid fa-chevron-right ml-1"></i></span>
+                        </div>
+                    `).join('') : '<p class="text-gray-500 text-sm">No hay capítulos publicados todavía.</p>'}
+                </div>
+            `;
+        }
+
+        // Abrir Lector de Capítulos (Vertical continuo)
+        async function openReader(chapterId, chapterNum) {
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('reader-view').classList.remove('hidden');
+            document.getElementById('reader-title').innerText = chapterNum;
+
+            const readerImages = document.getElementById('reader-images');
+            readerImages.innerHTML = '<p class="text-gray-400 text-center py-12">Cargando páginas...</p>';
+
+            const { data, error } = await supabaseClient.from('capitulos').select('*').eq('id', chapterId).single();
+
+            if (error || !data || !data.paginas) {
+                readerImages.innerHTML = '<p class="text-red-400 text-center py-12">Error al cargar las páginas del capítulo.</p>';
+                return;
+            }
+
+            // Las páginas se apilan una debajo de otra sin espacios (estilo lector web)
+            readerImages.innerHTML = data.paginas.map(imgUrl => `
+                <img src="${imgUrl.trim()}" alt="Página" loading="lazy" class="w-full max-w-2xl mx-auto block">
+            `).join('');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Control de Modal Admin
+        function openAdminModal() {
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            // Credenciales de acceso rápido al panel de administración
+            if (email === 'admin@admin.com' && pass === 'admin123') {
+                closeAdminModal();
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('detail-view').classList.add('hidden');
+                document.getElementById('admin-view').classList.remove('hidden');
+                loadAdminSelect();
+            } else {
+                alert('Credenciales incorrectas (Usa admin@admin.com / admin123)');
+            }
+        }
+
+        async function loadAdminSelect() {
+            const select = document.getElementById('c-manhwa-id');
+            const { data } = await supabaseClient.from('manhwas').select('id, titulo');
+            if (data && data.length > 0) {
+                select.innerHTML = data.map(m => `<option value="${m.id}">${m.titulo}</option>`).join('');
+            } else {
+                select.innerHTML = '<option value="">Primero debes crear un manhwa</option>';
+            }
+        }
+
+        // Crear Manhwa desde el Panel
+        async function handleCreateManhwa(e) {
+            e.preventDefault();
+            const titulo = document.getElementById('m-title').value;
+            const genero = document.getElementById('m-genero').value;
+            const portada_url = document.getElementById('m-cover').value;
+
+            const { error } = await supabaseClient.from('manhwas').insert([{ titulo, genero, portada_url }]);
+            if (error) {
+                alert('Error al guardar: ' + error.message);
+            } else {
+                alert('¡Manhwa creado con éxito!');
+                document.getElementById('add-manhwa-form').reset();
+                loadAdminSelect();
+            }
+        }
+
+        // Crear Capítulo desde el Panel
+        async function handleCreateChapter(e) {
+            e.preventDefault();
+            const manhwa_id = document.getElementById('c-manhwa-id').value;
+            const numero_capitulo = document.getElementById('c-number').value;
+            const pagesText = document.getElementById('c-pages').value;
+            const paginas = pagesText.split('\n').filter(url => url.trim() !== '');
+
+            const { error } = await supabaseClient.from('capitulos').insert([{ manhwa_id, numero_capitulo, paginas }]);
+            if (error) {
+                alert('Error al publicar capítulo: ' + error.message);
+            } else {
+                alert('¡Capítulo publicado con éxito!');
+                document.getElementById('add-chapter-form').reset();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -742,16 +742,21 @@
         async function procesarPaginasAdmin(input) {
             if (input.files && input.files.length > 0) {
                 const archivos = Array.from(input.files);
-                document.getElementById('labelAdminPaginas').innerText = `⏳ Procesando ${archivos.length} páginas...`;
+                document.getElementById('labelAdminPaginas').innerText = `⏳ Cargando ${archivos.length} páginas en alta calidad...`;
                 paginasCapituloBase64 = [];
                 
-                for (let file of archivos) {
-                    const imgComprimida = await comprimirImagen(file, 900, 1400, 0.82);
-                    paginasCapituloBase64.push(imgComprimida);
-                }
+                const promesas = archivos.map(file => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result); // Lee la imagen original sin perder calidad
+                        reader.readAsDataURL(file);
+                    });
+                });
+
+                paginasCapituloBase64 = await Promise.all(promesas);
 
                 document.getElementById('labelAdminPaginas').innerText = `✔ ${archivos.length} páginas listas`;
-                mostrarToast(`${archivos.length} páginas procesadas con éxito`);
+                mostrarToast(`${archivos.length} páginas cargadas en alta calidad`);
             }
         }
 
